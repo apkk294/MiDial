@@ -34,35 +34,22 @@ public class MiDialView extends View {
     }
 
     private void init(Context mContext) {
-        mBgColor = 0xff0000ff;
         mPaint = new Paint();
-        mMinHeight = dp2px(mContext, 800);
+        mBgColor = 0xff0000ff;
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
-        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
-
-        if (heightMode == MeasureSpec.AT_MOST) {
-            heightSize = mMinHeight;
-        }
-        setMeasuredDimension(widthSize, heightSize);
+        //这里设置View的高度为固定值800dp
+        setMeasuredDimension(widthSize,  800);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        //mPaint.setColor(mBgColor);
         canvas.drawColor(mBgColor);
-    }
-
-    private int dp2px(Context context, int dp) {
-        final float mDensity = context.getResources().getDisplayMetrics().density;
-        return (int) (dp * mDensity + 0.5f);
     }
 
 }
