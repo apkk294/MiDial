@@ -57,7 +57,7 @@ public class MiDialView extends View {
 
         mPaint = new Paint();
         mBgColor = 0xFF1E90FF;
-        mMinHeight = dp2px(300);
+        mMinHeight = dp2px(350);
 
         mArcWidth = dp2px(1);
         mArcColor = 0xFFCCCCCC;
