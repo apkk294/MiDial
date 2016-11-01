@@ -39,7 +39,7 @@ public class MiDialView extends View {
     private int mInnerCircleRadio;  //中间圆圈的半径
 
     private int mPointerLength; //指针长度
-    private int mPointer;   //指针当前所指刻度
+    private int mPointerAngle;   //指针当前所指刻度
 
     public MiDialView(Context context) {
         super(context);
@@ -74,8 +74,6 @@ public class MiDialView extends View {
 
         mInnerCircleWidth = dp2px(4);
         mInnerCircleRadio = dp2px(10);
-
-        mPointerLength = dp2px(68);
     }
 
     @Override
@@ -154,6 +152,8 @@ public class MiDialView extends View {
             endX += centerX;
             endY += centerY;
 
+            mPaint.setColor(i > 100 - mPointerAngle ? mCoveringTickrColor : mUncoveringTickColor);
+
             canvas.drawLine(startX, startY, endX, endY, mPaint);
         }
     }
@@ -169,20 +169,34 @@ public class MiDialView extends View {
         canvas.drawCircle(centerX, centerY, mInnerCircleRadio, mPaint);
     }
 
+    /**
+     * 画指针。
+     * 方法是首先画出一条水平的指针，然后根据要指到多少刻度来计算画布的旋转角度，通过画布的旋转就可以实现
+     * 改变指针方向的效果
+     *
+     * @param canvas 画布
+     */
     private void drawPointer(Canvas canvas) {
+        //指针的长度 = 外层弧的长度 - 弧和刻度线的间距 - 刻度线的长度 - 再减去一个指针和刻度线的间距
+        mPointerLength = (int) (mArcRadio - mTickIntervalToArc - mTickLength - mTickIntervalToArc);
         mPaint.setStrokeWidth(dp2px(3));
+
         canvas.save();
 
-        canvas.rotate(140f + mPointer * 2.6f, centerX, centerY);
+        //画布旋转140度，之后每加一个刻度，就多一个2.6度
+        //根据要指到多少刻度就能算出画布要旋转多少度（140 + 刻度 * 2.6）
+        canvas.rotate(140f + mPointerAngle * 2.6f, centerX, centerY);
 
+        //第一条线的起始位置稍微靠上一点，第二条线的起始位置稍微向下一点，但是终点都是相同的，所以看上去
+        //会有一头粗一头细的效果
         Path path = new Path();
         path.moveTo(centerX + mInnerCircleRadio - dp2px(1), centerY + dp2px(1));
-        path.lineTo(centerX + mInnerCircleRadio + dp2px(mPointerLength), centerY - dp2px(1));
+        path.lineTo(centerX + mPointerLength, centerY);
         canvas.drawPath(path, mPaint);
 
         Path path2 = new Path();
         path2.moveTo(centerX + mInnerCircleRadio - dp2px(1), centerY - dp2px(1));
-        path2.lineTo(centerX + mInnerCircleRadio + dp2px(mPointerLength), centerY - dp2px(1));
+        path2.lineTo(centerX + mPointerLength, centerY);
         canvas.drawPath(path2, mPaint);
 
         canvas.restore();
@@ -192,8 +206,8 @@ public class MiDialView extends View {
         return (int) (dp * mDensity + 0.5f);
     }
 
-    public void setPointer(int pointer) {
-        this.mPointer = pointer;
+    void setPointer(int pointer) {
+        this.mPointerAngle = pointer;
         invalidate();
     }
 
