@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
@@ -28,14 +29,17 @@ public class MiDialView extends View {
     private int   mArcWidth;    //外层圆弧的宽度
     private int   mArcColor;    //外层圆弧的颜色
 
-    private int mPointerWidth;              //刻度线的宽度
-    private int mUncoveringPointerColor;    //没有选中时的刻度指针颜色
-    private int mCoveringPointerColor;      //选中时的刻度指针颜色
-    private int mPointerIntervalToArc;      //刻度线距离弧线的间距
-    private int mPointerLength;             //刻度线的长度
+    private int mTickWidth;             //刻度线的宽度
+    private int mUncoveringTickColor;   //没有选中时的刻度指针颜色
+    private int mCoveringTickrColor;    //选中时的刻度指针颜色
+    private int mTickIntervalToArc;     //刻度线距离弧线的间距
+    private int mTickLength;            //刻度线的长度
 
     private int mInnerCircleWidth;  //中间圆圈的宽
     private int mInnerCircleRadio;  //中间圆圈的半径
+
+    private int mPointerLength; //指针长度
+    private int mPointer;   //指针当前所指刻度
 
     public MiDialView(Context context) {
         super(context);
@@ -57,19 +61,21 @@ public class MiDialView extends View {
 
         mPaint = new Paint();
         mBgColor = 0xFF1E90FF;
-        mMinHeight = dp2px(350);
+        mMinHeight = dp2px(400);
 
         mArcWidth = dp2px(1);
         mArcColor = 0xFFCCCCCC;
 
-        mPointerWidth = dp2px(2);
-        mUncoveringPointerColor = 0xFFAEAEAE;
-        mCoveringPointerColor = 0xFFFFFFFF;
-        mPointerIntervalToArc = dp2px(10);
-        mPointerLength = dp2px(20);
+        mTickWidth = dp2px(2);
+        mUncoveringTickColor = 0xFFAEAEAE;
+        mCoveringTickrColor = 0xFFFFFFFF;
+        mTickIntervalToArc = dp2px(10);
+        mTickLength = dp2px(20);
 
         mInnerCircleWidth = dp2px(4);
         mInnerCircleRadio = dp2px(10);
+
+        mPointerLength = dp2px(68);
     }
 
     @Override
@@ -104,9 +110,11 @@ public class MiDialView extends View {
 
         drawRectArc(canvas);
 
-        drawPointers(canvas);
+        drawTick(canvas);
 
         drawInnerCircle(canvas);
+
+        drawPointer(canvas);
     }
 
     /**
@@ -125,13 +133,13 @@ public class MiDialView extends View {
     /**
      * 刻度线
      */
-    private void drawPointers(Canvas canvas) {
-        mPaint.setColor(mUncoveringPointerColor);
-        mPaint.setStrokeWidth(mPointerWidth);
+    private void drawTick(Canvas canvas) {
+        mPaint.setColor(mUncoveringTickColor);
+        mPaint.setStrokeWidth(mTickWidth);
 
         float startX, startY, endX, endY;
-        float mPointLargeRadio = mArcRadio - mPointerIntervalToArc;
-        float mPointSmallRadio = mPointLargeRadio - mPointerLength;
+        float mPointLargeRadio = mArcRadio - mTickIntervalToArc;
+        float mPointSmallRadio = mPointLargeRadio - mTickLength;
 
         //因为第一条刻度代表0，所以一共有101条刻度
         //整个弧度是260°，101条刻度线也就是260除以101，大约每个刻度之间间隔2.6°
@@ -161,8 +169,32 @@ public class MiDialView extends View {
         canvas.drawCircle(centerX, centerY, mInnerCircleRadio, mPaint);
     }
 
+    private void drawPointer(Canvas canvas) {
+        mPaint.setStrokeWidth(dp2px(3));
+        canvas.save();
+
+        canvas.rotate(140f + mPointer * 2.6f, centerX, centerY);
+
+        Path path = new Path();
+        path.moveTo(centerX + mInnerCircleRadio - dp2px(1), centerY + dp2px(1));
+        path.lineTo(centerX + mInnerCircleRadio + dp2px(mPointerLength), centerY - dp2px(1));
+        canvas.drawPath(path, mPaint);
+
+        Path path2 = new Path();
+        path2.moveTo(centerX + mInnerCircleRadio - dp2px(1), centerY - dp2px(1));
+        path2.lineTo(centerX + mInnerCircleRadio + dp2px(mPointerLength), centerY - dp2px(1));
+        canvas.drawPath(path2, mPaint);
+
+        canvas.restore();
+    }
+
     private int dp2px(int dp) {
         return (int) (dp * mDensity + 0.5f);
+    }
+
+    public void setPointer(int pointer) {
+        this.mPointer = pointer;
+        invalidate();
     }
 
 }
