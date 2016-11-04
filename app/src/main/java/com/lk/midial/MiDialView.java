@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
@@ -41,6 +42,11 @@ public class MiDialView extends View {
     private int mPointerLength; //指针长度
     private int mPointerAngle;   //指针当前所指刻度
 
+    private int mButtonWidth;   //按钮的宽度
+    private int mButtonHeight;  //按钮的高度
+    private int mButtonTextSize;    //按钮的文字大小
+    private String mButtonText = "开始体检"; //按钮的文字
+
     public MiDialView(Context context) {
         super(context);
         init(context);
@@ -74,6 +80,10 @@ public class MiDialView extends View {
 
         mInnerCircleWidth = dp2px(4);
         mInnerCircleRadio = dp2px(10);
+
+        /*mButtonWidth = dp2px(100);
+        mButtonHeight = dp2px(50);*/
+        mButtonTextSize = sp2px(16);
     }
 
     @Override
@@ -85,7 +95,7 @@ public class MiDialView extends View {
         centerY = getHeight() / 2;
 
         //计算最外层圆弧的半径
-        mArcRadio = getWidth() > getHeight() ? centerY * 0.9f : centerX * 0.9f;
+        mArcRadio = getWidth() > getHeight() ? centerY * 0.8f : centerX * 0.8f;
         //圆弧所在的正方形区域
         mArcRect = new RectF(centerX - mArcRadio, centerY - mArcRadio, centerX + mArcRadio,
                 centerY + mArcRadio);
@@ -113,6 +123,8 @@ public class MiDialView extends View {
         drawInnerCircle(canvas);
 
         drawPointer(canvas);
+
+        drawButton(canvas);
     }
 
     /**
@@ -202,8 +214,48 @@ public class MiDialView extends View {
         canvas.restore();
     }
 
+    /**
+     * 画按钮
+     *
+     * @param canvas 画布
+     */
+    private void drawButton(Canvas canvas) {
+        mPaint.setColor(mUncoveringTickColor);
+        mPaint.setStrokeWidth(1);
+        mPaint.setStyle(Paint.Style.STROKE);
+
+        //宽度为指针长度的1.2倍
+        mButtonWidth = (int) (mPointerLength * 1.2f);
+        //高度为宽的一半 - 15dp, 减15dp看起来更和谐
+        mButtonHeight = mButtonWidth / 2 - dp2px(15);
+
+        //按钮所在区域
+        RectF rectF = new RectF(
+                centerX - mButtonWidth / 2,
+                centerY + mArcRadio - mButtonHeight,
+                centerX + mButtonWidth / 2,
+                centerY + mArcRadio);
+        canvas.drawRoundRect(rectF, mButtonHeight / 2, mButtonHeight / 2, mPaint);
+
+        //画出文字
+        mPaint.setColor(Color.WHITE);
+        mPaint.setStrokeWidth(1);
+        mPaint.setStyle(Paint.Style.FILL);
+        mPaint.setTextSize(mButtonTextSize);
+        Rect textBounds = new Rect();
+        mPaint.getTextBounds(mButtonText, 0, mButtonText.length(), textBounds);
+        canvas.drawText(mButtonText, rectF.centerX() - textBounds.width() / 2,
+                rectF.bottom - (rectF.height() / 2 - textBounds.height() / 2),
+                mPaint);
+    }
+
     private int dp2px(int dp) {
         return (int) (dp * mDensity + 0.5f);
+    }
+
+    public int sp2px(float spValue) {
+        final float fontScale = getContext().getResources().getDisplayMetrics().scaledDensity;
+        return (int) (spValue * fontScale + 0.5f);
     }
 
     void setPointer(int pointer) {
