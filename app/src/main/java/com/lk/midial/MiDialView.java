@@ -8,6 +8,8 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 
 /**
@@ -16,19 +18,21 @@ import android.view.View;
 
 public class MiDialView extends View {
 
+    private static final String TAG = "MiDialView";
+
     private float mDensity;
 
-    private int   mBgColor;                  //背景颜色
+    private int mBgColor;                  //背景颜色
     private Paint mPaint;                   //画笔
 
-    private int   mMinHeight;   //最小高度
+    private int mMinHeight;   //最小高度
     private float centerX;      //中心点x坐标
     private float centerY;      //中心点y坐标
 
     private RectF mArcRect;     //最外层弧线区域
     private float mArcRadio;    //外层圆弧的半径
-    private int   mArcWidth;    //外层圆弧的宽度
-    private int   mArcColor;    //外层圆弧的颜色
+    private int mArcWidth;    //外层圆弧的宽度
+    private int mArcColor;    //外层圆弧的颜色
 
     private int mTickWidth;             //刻度线的宽度
     private int mUncoveringTickColor;   //没有选中时的刻度指针颜色
@@ -42,10 +46,10 @@ public class MiDialView extends View {
     private int mPointerLength; //指针长度
     private int mPointerAngle;   //指针当前所指刻度
 
-    private int mButtonWidth;   //按钮的宽度
-    private int mButtonHeight;  //按钮的高度
+    private RectF mButtonRectF;    //按钮中间的方框区域
     private int mButtonTextSize;    //按钮的文字大小
     private String mButtonText = "开始体检"; //按钮的文字
+    private boolean mIsTouchedButton;    //开始按钮是否正在点中
 
     public MiDialView(Context context) {
         super(context);
@@ -125,6 +129,30 @@ public class MiDialView extends View {
         drawPointer(canvas);
 
         drawButton(canvas);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                if (isTouchedInButton(event.getX(), event.getY())) {
+                    Log.d(TAG, "onTouchEvent: touched in button");
+                    mIsTouchedButton = true;
+                    postInvalidate();
+                }
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (!isTouchedInButton(event.getX(), event.getY())) {
+                    mIsTouchedButton = false;
+                    postInvalidate();
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                mIsTouchedButton = false;
+                postInvalidate();
+                break;
+        }
+        return super.onTouchEvent(event);
     }
 
     /**
@@ -224,29 +252,75 @@ public class MiDialView extends View {
         mPaint.setStrokeWidth(1);
         mPaint.setStyle(Paint.Style.STROKE);
 
-        //宽度为指针长度的1.2倍
-        mButtonWidth = (int) (mPointerLength * 1.2f);
-        //高度为宽的一半 - 15dp, 减15dp看起来更和谐
-        mButtonHeight = mButtonWidth / 2 - dp2px(15);
+        //按钮矩形的宽度为指针长度,高度为宽的一半
+        int buttonWidth = mPointerLength;
+        int buttonHeight = buttonWidth / 2;
 
-        //按钮所在区域
-        RectF rectF = new RectF(
-                centerX - mButtonWidth / 2,
-                centerY + mArcRadio - mButtonHeight,
-                centerX + mButtonWidth / 2,
-                centerY + mArcRadio);
-        canvas.drawRoundRect(rectF, mButtonHeight / 2, mButtonHeight / 2, mPaint);
+        mButtonRectF = new RectF(centerX - buttonWidth / 2, centerY + mArcRadio - buttonHeight,
+                centerX + buttonWidth / 2, centerY + mArcRadio);
 
-        //画出文字
+        Path mButtonPath = new Path();
+        //下面那条线
+        mButtonPath.moveTo(mButtonRectF.left, mButtonRectF.bottom);
+        mButtonPath.lineTo(mButtonRectF.right, mButtonRectF.bottom);
+        //右边半圆
+        RectF rightArc = new RectF(mButtonRectF.right - mButtonRectF.height() / 2,
+                mButtonRectF.top, mButtonRectF.right + mButtonRectF.height() / 2, mButtonRectF.bottom);
+        mButtonPath.addArc(rightArc, -90, 180);
+        //上面那条线
+        mButtonPath.moveTo(mButtonRectF.right, mButtonRectF.top);
+        mButtonPath.lineTo(mButtonRectF.left, mButtonRectF.top);
+        //左边半圆
+        RectF leftArc = new RectF(mButtonRectF.left - mButtonRectF.height() / 2,
+                mButtonRectF.top, mButtonRectF.left + mButtonRectF.height() / 2, mButtonRectF.bottom);
+        mButtonPath.addArc(leftArc, 90, 180);
+
+        canvas.drawPath(mButtonPath, mPaint);
+
+
+        //按钮文字画笔的配置
         mPaint.setColor(Color.WHITE);
         mPaint.setStrokeWidth(1);
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setTextSize(mButtonTextSize);
+
+        //画出文字
         Rect textBounds = new Rect();
         mPaint.getTextBounds(mButtonText, 0, mButtonText.length(), textBounds);
-        canvas.drawText(mButtonText, rectF.centerX() - textBounds.width() / 2,
-                rectF.bottom - (rectF.height() / 2 - textBounds.height() / 2),
+        canvas.drawText(mButtonText, centerX - textBounds.width() / 2,
+                centerY + mArcRadio - (mButtonRectF.height() / 2 - textBounds.height() / 2),
                 mPaint);
+    }
+
+    private boolean isTouchedInButton(float x, float y) {
+        //坐标是否在按钮的矩形范围内
+        if (x >= mButtonRectF.left&& x <= mButtonRectF.right&&
+                y >= mButtonRectF.top && y <= mButtonRectF.bottom) {
+            return true;
+        }
+
+        //如果坐标与圆心之间的长度小于半径，说明坐标在圆内，即 x的平方 + y的平方 < 半径的平方
+
+        //坐标是否在 左边的半圆范围内
+        float leftCenterX = mButtonRectF.left; //左边半圆圆心x坐标
+        float leftCenterY = mButtonRectF.top + mButtonRectF.height() / 2;   //左边半圆圆心y坐标
+        float newLeftX = x - leftCenterX;   //坐标距离左半圆圆心的X方向上的距离
+        float newLeftY = y - leftCenterY;   //坐标距离左半圆圆心的Y方向上的距离
+        if (newLeftX * newLeftX + newLeftY * newLeftY <
+                mButtonRectF.height() / 2 * mButtonRectF.height() / 2) {
+            return true;
+        }
+        //坐标是否在 右边的半圆范围内
+        float rightCenterX = mButtonRectF.right;    //右边半圆圆心的X坐标
+        float rightCenterY = mButtonRectF.top + mButtonRectF.height() / 2;  //右边半圆圆心的Y坐标
+        float newRightX = x - rightCenterX;
+        float newRightY = y - rightCenterY;
+        if (newRightX * newRightX + newRightY * newRightY <
+                mButtonRectF.height() / 2 * mButtonRectF.height() / 2) {
+            return true;
+        }
+
+        return false;
     }
 
     private int dp2px(int dp) {
