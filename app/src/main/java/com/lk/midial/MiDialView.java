@@ -1,5 +1,6 @@
 package com.lk.midial;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -49,7 +50,7 @@ public class MiDialView extends View {
     private RectF mButtonRectF;    //按钮中间的方框区域
     private int mButtonTextSize;    //按钮的文字大小
     private String mButtonText = "开始体检"; //按钮的文字
-    private boolean mIsTouchedButton;    //开始按钮是否正在点中
+    private boolean mIsButtonTouched;    //开始按钮是否正在点中
 
     public MiDialView(Context context) {
         super(context);
@@ -137,20 +138,25 @@ public class MiDialView extends View {
             case MotionEvent.ACTION_DOWN:
                 if (isTouchedInButton(event.getX(), event.getY())) {
                     Log.d(TAG, "onTouchEvent: touched in button");
-                    mIsTouchedButton = true;
+                    mIsButtonTouched = true;
                     postInvalidate();
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
+                Log.d(TAG, "onTouchEvent: touched button moved");
                 if (!isTouchedInButton(event.getX(), event.getY())) {
-                    mIsTouchedButton = false;
+                    mIsButtonTouched = false;
                     postInvalidate();
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                mIsTouchedButton = false;
+                Log.d(TAG, "onTouchEvent: touched button up");
+                mIsButtonTouched = false;
                 postInvalidate();
                 break;
+        }
+        if (mIsButtonTouched) {
+            return true;
         }
         return super.onTouchEvent(event);
     }
@@ -248,9 +254,14 @@ public class MiDialView extends View {
      * @param canvas 画布
      */
     private void drawButton(Canvas canvas) {
-        mPaint.setColor(mUncoveringTickColor);
+        mPaint.setColor(0x66eeeeee);
         mPaint.setStrokeWidth(1);
-        mPaint.setStyle(Paint.Style.STROKE);
+        if (mIsButtonTouched) {
+            //点击状态时设置画笔为填充
+            mPaint.setStyle(Paint.Style.FILL);
+        } else {
+            mPaint.setStyle(Paint.Style.STROKE);
+        }
 
         //按钮矩形的宽度为指针长度,高度为宽的一半
         int buttonWidth = mPointerLength;
@@ -263,6 +274,10 @@ public class MiDialView extends View {
         //下面那条线
         mButtonPath.moveTo(mButtonRectF.left, mButtonRectF.bottom);
         mButtonPath.lineTo(mButtonRectF.right, mButtonRectF.bottom);
+        if (mIsButtonTouched) {
+            //点击时需要画出右边的线，形成封闭图形才能正常填充颜色
+            mButtonPath.lineTo(mButtonRectF.right, mButtonRectF.top);
+        }
         //右边半圆
         RectF rightArc = new RectF(mButtonRectF.right - mButtonRectF.height() / 2,
                 mButtonRectF.top, mButtonRectF.right + mButtonRectF.height() / 2, mButtonRectF.bottom);
@@ -270,6 +285,10 @@ public class MiDialView extends View {
         //上面那条线
         mButtonPath.moveTo(mButtonRectF.right, mButtonRectF.top);
         mButtonPath.lineTo(mButtonRectF.left, mButtonRectF.top);
+        if (mIsButtonTouched) {
+            //点击的话需要画出左边的线，形成封闭图形才能正常填充颜色
+            mButtonPath.lineTo(mButtonRectF.left, mButtonRectF.bottom);
+        }
         //左边半圆
         RectF leftArc = new RectF(mButtonRectF.left - mButtonRectF.height() / 2,
                 mButtonRectF.top, mButtonRectF.left + mButtonRectF.height() / 2, mButtonRectF.bottom);
@@ -294,7 +313,7 @@ public class MiDialView extends View {
 
     private boolean isTouchedInButton(float x, float y) {
         //坐标是否在按钮的矩形范围内
-        if (x >= mButtonRectF.left&& x <= mButtonRectF.right&&
+        if (x >= mButtonRectF.left && x <= mButtonRectF.right &&
                 y >= mButtonRectF.top && y <= mButtonRectF.bottom) {
             return true;
         }
@@ -333,8 +352,20 @@ public class MiDialView extends View {
     }
 
     void setPointer(int pointer) {
-        this.mPointerAngle = pointer;
-        invalidate();
+        //this.mPointerAngle = pointer;
+        //invalidate();
+
+        ValueAnimator animator = ValueAnimator.ofInt(mPointerAngle, pointer);
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                mPointerAngle = (int) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+        animator.setDuration(500);
+        animator.start();
+
     }
 
 }
