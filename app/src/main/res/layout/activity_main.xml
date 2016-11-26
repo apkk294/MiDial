@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
@@ -11,7 +12,16 @@
     <com.lk.midial.MiDialView
         android:id="@+id/mi_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        custom:dial_arc_color="@color/base_color"
+        custom:dial_covering_tick_color="@android:color/white"
+        custom:dial_uncovering_tick_color="@color/base_color"
+        custom:dial_inner_circle_stroke="4dp"
+        custom:dial_pointer_color="@android:color/white"
+        custom:dial_button_color="@color/base_color"
+        custom:dial_button_text="点击开始"
+        custom:dial_button_text_color="@android:color/white"
+        custom:dial_button_text_size="16sp"/>
 
     <android.support.v7.widget.AppCompatSeekBar
         android:id="@+id/seek"
