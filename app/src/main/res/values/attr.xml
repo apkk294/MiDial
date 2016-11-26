@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="MiDialView">
+        <attr name="dial_background" format="color"/>
+        <attr name="dial_arc_color" format="color"/>
+        <attr name="dial_uncovering_tick_color" format="color"/>
+        <attr name="dial_covering_tick_color" format="color"/>
+        <attr name="dial_inner_circle_stroke" format="dimension"/>
+        <attr name="dial_pointer_color" format="color"/>
+        <attr name="dial_button_color" format="color"/>
+        <attr name="dial_button_text" format="string"/>
+        <attr name="dial_button_text_color" format="color"/>
+        <attr name="dial_button_text_size" format="dimension"/>
+    </declare-styleable>
+
+</resources>
