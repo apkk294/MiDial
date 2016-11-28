@@ -61,6 +61,11 @@ public class MiDialView extends View {
     private int     mButtonTextColor;   //按钮文字颜色
     private boolean mIsButtonTouched;   //开始按钮是否正在点中
 
+    //按钮下面的提示语
+    private String mTipText;   //提示语文字
+    private int    mTipTextColor;  //提示语文字颜色
+    private int    mTipTextSize;   //提示语文字大小
+
     //刚开始表盘会循环亮一遍的那个角度，动画结束后这个值等于100，所以可以判断这个是否等于100来
     //判断初始动画是否完成
     private int mInitAngle;
@@ -92,8 +97,10 @@ public class MiDialView extends View {
 
         mInnerCircleRadio = dp2px(10);
 
-        mButtonColor = 0x66EEEEEE;
         mButtonText = "开始体检";
+
+        mTipText = "手机出现问题，点击体检";
+
 
         //获取自定义属性
         TypedArray typedArray = context.getTheme().obtainStyledAttributes(attrs,
@@ -123,6 +130,15 @@ public class MiDialView extends View {
         mButtonTextSize = typedArray.getDimensionPixelSize(
                 R.styleable.MiDialView_dial_button_text_size,
                 (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16,
+                        getResources().getDisplayMetrics()));
+        if (typedArray.hasValue(R.styleable.MiDialView_dial_tip_text)) {
+            mTipText = typedArray.getString(R.styleable.MiDialView_dial_tip_text);
+        }
+        mTipTextColor = typedArray.getColor(R.styleable.MiDialView_dial_tip_text_color,
+                0x66EEEEEE);
+        mTipTextSize = typedArray.getDimensionPixelSize(
+                R.styleable.MiDialView_dial_tip_text_size,
+                (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12,
                         getResources().getDisplayMetrics()));
         typedArray.recycle();
 
@@ -167,6 +183,8 @@ public class MiDialView extends View {
         drawPointer(canvas);
 
         drawButton(canvas);
+
+        drawTip(canvas);
         if (mInitAngle == 0) {
             startInitAnim();
         }
@@ -373,12 +391,28 @@ public class MiDialView extends View {
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setTextSize(mButtonTextSize);
 
+
         //画出文字
         Rect textBounds = new Rect();
         mPaint.getTextBounds(mButtonText, 0, mButtonText.length(), textBounds);
-        canvas.drawText(mButtonText, centerX - textBounds.width() / 2,
+        /*canvas.drawText(mButtonText, centerX - textBounds.width() / 2,
                 centerY + mArcRadio - (mButtonRectF.height() / 2 - textBounds.height() / 2),
+                mPaint);*/
+        canvas.drawText(mButtonText, centerX - textBounds.width() / 2,
+                mButtonRectF.centerY() + textBounds.height() / 2,
                 mPaint);
+    }
+
+    private void drawTip(Canvas canvas) {
+        mPaint.setColor(mTipTextColor);
+        mPaint.setStrokeWidth(dp2px(1));
+        mPaint.setStyle(Paint.Style.FILL);
+        mPaint.setTextSize(mTipTextSize);
+        Rect textBounds = new Rect();
+        mPaint.getTextBounds(mTipText, 0, mTipText.length(), textBounds);
+
+        canvas.drawText(mTipText, centerX - textBounds.width() / 2,
+                centerY + mArcRadio + textBounds.height() + dp2px(3), mPaint);
     }
 
     /**
@@ -452,10 +486,28 @@ public class MiDialView extends View {
         return (int) (spValue * fontScale + 0.5f);
     }
 
+    /**
+     * Sets the pointer position
+     * 设置指针位置
+     *
+     * @param pointer The pointer position, should between 0 to 100
+     */
     void setPointer(int pointer) {
         //this.mPointerAngle = pointer;
         //invalidate();
         startPointerAnim(pointer);
+    }
+
+    /**
+     * Set the tip text below start button ,if not set,then the default is "phone problems,
+     * click to check"
+     * 设置开始按钮下面的提示文字，如果不设置的话默认文字是“手机出现问题，点击体检”
+     *
+     * @param tipText The tip text String
+     */
+    void setTipText(String tipText) {
+        mTipText = tipText;
+        invalidate();
     }
 
     void setOnButtonClickListener(OnButtonClickListener onButtonClickListener) {

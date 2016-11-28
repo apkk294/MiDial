@@ -12,6 +12,9 @@
         <attr name="dial_button_text" format="string"/>
         <attr name="dial_button_text_color" format="color"/>
         <attr name="dial_button_text_size" format="dimension"/>
+        <attr name="dial_tip_text" format="string"/>
+        <attr name="dial_tip_text_color" format="color"/>
+        <attr name="dial_tip_text_size" format="dimension"/>
     </declare-styleable>
 
 </resources>
